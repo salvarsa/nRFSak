@@ -114,49 +114,123 @@ void resetToSplash() {
   Serial.println("Regresando a pantalla de inicio");
 }
 
-// Función para mostrar la pantalla de splash/inicio
+// // Función para mostrar la pantalla de splash/inicio
+// void displaySplashScreen() {
+//   display.clearDisplay();
+  
+//   // Mostrar logo principal
+//   display.drawBitmap(40, 0, logo_nrfsak, 30, 30, SSD1306_WHITE);
+  
+//   // // Texto de bienvenida
+//   // display.setTextSize(1);
+//   // display.setTextColor(SSD1306_WHITE);
+//   // display.setCursor(25, 20);
+//   // display.println("nRFSak");
+//   // display.setCursor(5, 28);
+//   // display.println("Press LEFT/RIGHT");
+  
+//   display.display();
+// }
+
+// Función para mostrar la pantalla de splash/inicio personalizada
 void displaySplashScreen() {
   display.clearDisplay();
-  
-  // Mostrar logo principal
-  display.drawBitmap(40, 0, logo_nrfbox, 48, 16, SSD1306_WHITE);
-  
-  // Texto de bienvenida
-  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(25, 20);
-  display.println("nRFSak");
-  display.setCursor(5, 28);
-  display.println("Press LEFT/RIGHT");
+  display.setTextWrap(false);
+  
+  // Verificar si tienes las fuentes disponibles
+  #ifdef HAVE_CUSTOM_FONTS
+    // Si tienes las fuentes personalizadas, usar el diseño original
+    display.setFont(&FreeSerifBold9pt7b);
+    display.setCursor(52, 16);
+    display.print("nRFSak");
+    
+    display.drawBitmap(14, 1, logo_nrfSak, 30, 30, SSD1306_WHITE);
+    
+    display.setFont(&Picopixel);
+    display.setCursor(73, 25);
+    display.print("V 1.0");
+  #else
+    // Versión con fuente estándar de Arduino (más compatible)
+    
+    // Dibujar logo principal
+    display.drawBitmap(14, 1, logo_nrfsak, 30, 30, SSD1306_WHITE);
+    
+    // Título principal con fuente estándar
+    display.setTextSize(2);  // Texto más grande para el título
+    display.setCursor(52, 8);
+    display.print("nRFSak");
+    
+    // Versión con fuente más pequeña
+    display.setTextSize(1);
+    display.setCursor(73, 25);
+    display.print("V 1.0");
+    
+    // // Instrucciones de navegación (opcional)
+    // display.setTextSize(1);
+    // display.setCursor(46, 57);
+    // display.print("Press L/R");
+  #endif
   
   display.display();
 }
 
-// Función para dibujar el menú principal
+// Función para dibujar el menú principal con iconos individuales mejorada
 void drawMenu() {
   display.clearDisplay();
   
-  // Dibujar icono centrado
-  int iconX = (OLED_WIDTH - 16) / 2;  // Centrar icono de 16px
-  int iconY = 2;
-  display.drawBitmap(iconX, iconY, menuIcons[currentMenuItem], 16, 16, SSD1306_WHITE);
+  // Dibujar icono según el elemento del menú actual (movidos más arriba)
+  switch(currentMenuItem) {
+    case MENU_SCANNER:
+      // Scanner - 15x16 pixels (Y reducido de 6 a 2)
+      display.drawBitmap(58, 2, icon_scanner, 15, 16, SSD1306_WHITE);
+      break;
+      
+    case MENU_ANALYZER:
+      // Analyzer - 17x16 pixels (Y reducido de 9 a 5)
+      display.drawBitmap(52, 5, icon_analyzer, 17, 16, SSD1306_WHITE);
+      break;
+      
+    case MENU_JAMMER:
+      // Jammer - 14x16 pixels (Y reducido de 7 a 3)
+      display.drawBitmap(55, 3, icon_jammer, 14, 16, SSD1306_WHITE);
+      break;
+      
+    case MENU_BLE_SPOOFER:
+      // BLE Spoofer - 14x16 pixels (Y reducido de 8 a 4)
+      display.drawBitmap(51, 4, icon_ble, 14, 16, SSD1306_WHITE);
+      break;
+      
+    case MENU_SOUR_APPLE:
+      // Sour Apple - 18x18 pixels (Y reducido de 7 a 1, necesita más espacio por ser 18px alto)
+      display.drawBitmap(50, 1, icon_apple, 18, 18, SSD1306_WHITE);
+      break;
+      
+    case MENU_SETTINGS:
+      // Settings - 16x16 pixels (Y reducido de 7 a 3)
+      display.drawBitmap(53, 3, icon_settings, 16, 16, SSD1306_WHITE);
+      break;
+  }
   
-  // Nombre del elemento del menú debajo del icono
-  display.setTextSize(1);
+  // Nombre del elemento del menú debajo del icono con texto más pequeño
+  display.setTextSize(1); // Tamaño 1 es el más pequeño disponible en Adafruit_GFX
   display.setTextColor(SSD1306_WHITE);
   
-  // Calcular posición centrada del texto
-  int textWidth = strlen(menuItems[currentMenuItem]) * 6; // Aproximadamente 6px por carácter
+  // Calcular posición centrada del texto (corregido el multiplicador)
+  int textWidth = strlen(menuItems[currentMenuItem]) * 6; // 6px por carácter para textSize(1)
   int textX = (OLED_WIDTH - textWidth) / 2;
-  display.setCursor(textX, 22);
+  
+  // Posición Y del texto más abajo para dar más separación del icono
+  display.setCursor(textX, 25); // Cambiado de 22 a 25 para más separación
   display.println(menuItems[currentMenuItem]);
   
-  // Mostrar navegación en esquina inferior derecha (texto más pequeño)
-  display.setTextSize(1);
-  display.setCursor(95, 25);
-  display.print(currentMenuItem + 1);
-  display.print("/");
-  display.print(MENU_ITEMS);
+ // Mostrar navegación en esquina superior izquierda (más pequeño)
+ display.setTextSize(1);  // Ya es el tamaño más pequeño disponible
+ display.setCursor(2, 2); // Esquina superior izquierda (X=2, Y=2 para un pequeño margen)
+ display.print(currentMenuItem + 1);
+ display.print("/");
+ display.print(MENU_ITEMS);
+
   
   // Instrucciones de navegación en la parte inferior
   display.setTextSize(1);
@@ -319,7 +393,7 @@ void executeMenuItem() {
 void setup() {
   Serial.begin(115200);
   delay(1000); // Dar tiempo al Serial Monitor
-  Serial.println("Iniciando nRFBox...");
+  Serial.println("Iniciando nRFSak...");
   
   // Inicializar I2C para la pantalla OLED
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -336,7 +410,7 @@ void setup() {
   // Mostrar pantalla de splash
   displaySplashScreen();
   
-  Serial.println("nRFBox iniciado correctamente!");
+  Serial.println("nRFSak iniciado correctamente!");
   Serial.println("Presiona LEFT o RIGHT para entrar al menu");
 }
 
