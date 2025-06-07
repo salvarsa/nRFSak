@@ -18,6 +18,7 @@
 #define SAMPLES_PER_CHANNEL 50
 #define SCAN_INTERVAL 250 
 
+bool scannerSetup(Adafruit_SSD1306* displayPtr);
 void scannerSetup();
 void scannerLoop();
 void scannerExit();

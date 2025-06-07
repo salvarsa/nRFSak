@@ -7,8 +7,6 @@
 #include "menu.h"
 #include "scanner.h"
 
-bool in_scanner_mode = false;
-
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET);
 
 void setup() {

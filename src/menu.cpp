@@ -292,62 +292,103 @@ void handleMenuNavigation() {
 void executeMenuItem() {
     if (!display) return;
     
-    display->clearDisplay();
-    display->setTextSize(1);
-    display->setTextColor(SSD1306_WHITE);
-    display->setCursor(0, 0);
+    Serial.print("Ejecutando item del menú: ");
+    Serial.println(menuItems[currentMenuItem]);
     
     switch(currentMenuItem) {
         case MENU_SCANNER:
-            display->println("Scanner Mode");
-            display->println("Scanning 2.4GHz...");
-            display->println("Press any key to exit");
-            display->display();
-            
-            // Iniciar el modo escáner
-            scannerSetup();
-            in_scanner_mode = true;
-            return;
+            Serial.println("=== Iniciando Scanner ===");
+            // Intentar inicializar el scanner
+            if (scannerSetup(display)) {
+                Serial.println("Scanner inicializado correctamente");
+                inSubMenu = false;
+                inMenu = false; 
+                return;
+            } else {
+                Serial.println("Error: No se pudo inicializar el scanner");
+                display->clearDisplay();
+                display->setTextSize(1);
+                display->setTextColor(SSD1306_WHITE);
+                display->setCursor(0, 0);
+                display->println("Scanner Mode");
+                display->println("ERROR: Failed to init");
+                display->println("Check NRF24 connection");
+                display->println("");
+                display->println("Press any key to return");
+                display->display();
+            }
+            break;
             
         case MENU_ANALYZER:
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
             display->println("Analyzer Mode");
             display->println("Analyzing signals...");
             display->println("");
             display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
             
         case MENU_JAMMER:
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
             display->println("Jammer Mode");
             display->println("WARNING: Use legally!");
             display->println("");
             display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
             
         case MENU_BLE_SPOOFER:
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
             display->println("BLE Spoofer Mode");
             display->println("Spoofing BLE...");
             display->println("");
             display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
             
         case MENU_SOUR_APPLE:
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
             display->println("Sour Apple Mode");
             display->println("Apple attack...");
             display->println("");
             display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
             
         case MENU_SETTINGS:
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
             display->println("Settings");
             display->println("Configure device...");
             display->println("");
             display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
     }
-    
-    display->println("");
-    display->println("Press any key to return");
-    display->display();
 }
 
 bool menuNeedsDisplayUpdate() {
