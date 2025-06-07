@@ -1,6 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 
+#pragma once
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -15,6 +16,7 @@ void displaySplashScreen();
 void drawMenu();
 void executeMenuItem();
 void resetToSplash();
+ButtonState readButtons();
 
 // Funciones para obtener el estado del menú
 bool menuNeedsDisplayUpdate();

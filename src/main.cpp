@@ -5,11 +5,12 @@
 #include "config.h"
 #include "icons.h"
 #include "menu.h"
+#include "scanner.h"
 
-// Inicialización de la pantalla OLED
+bool in_scanner_mode = false;
+
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET);
 
-// Función de configuración inicial
 void setup() {
     Serial.begin(115200);
     delay(1000);
@@ -17,8 +18,7 @@ void setup() {
     
     // Inicializar I2C para la pantalla OLED
     Wire.begin(OLED_SDA, OLED_SCL);
-    
-    // Inicializar pantalla OLED
+
     if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println("Error: No se pudo inicializar la pantalla OLED");
         for(;;); // Loop infinito si no se puede inicializar la pantalla
@@ -33,18 +33,30 @@ void setup() {
 }
 
 void loop() {
+  if (in_scanner_mode) {
+    scannerLoop();
+    
+    ButtonState btn = readButtons();
+    if (btn != BTN_NONE) {
+        scannerExit();
+        resetToSplash();
+        setMenuDisplayUpdateFlag(true); 
+    }
+}
+else {
     handleMenuNavigation();
     
-    // Actualizar pantalla solo si es necesario
     if (menuNeedsDisplayUpdate()) {
         if (menuIsShowingSplash()) {
             displaySplashScreen();
-        } else if (menuIsInMenu() && !menuIsInSubMenu()) {
+        } 
+        else if (menuIsInMenu() && !menuIsInSubMenu()) {
             drawMenu();
         }
         setMenuDisplayUpdateFlag(false);
     }
-    
-    // Pequeña pausa para evitar consumo excesivo de CPU
-    delay(50);
+}
+
+// Pequeña pausa para evitar consumo excesivo de CPU
+delay(10);
 }

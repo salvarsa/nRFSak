@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "scanner.h"
 
 static int currentMenuItem = 0;
 static bool inMenu = false;
@@ -6,16 +7,13 @@ static bool inSubMenu = false;
 static bool displayNeedsUpdate = true;
 static bool showSplash = true;
 
-// Variables para timeout del menú (2 minutos = 120000 ms)
 static unsigned long menuTimeout = 120000;
 static unsigned long lastMenuActivity = 0;
 
-// Variables mejoradas para debounce de botones
 static unsigned long lastButtonPress = 0;
 static const unsigned long DEBOUNCE_TIME = 200;
 static ButtonState lastButtonState = BTN_NONE;
 
-// Puntero al display (será inicializado desde main)
 static Adafruit_SSD1306* display = nullptr;
 
 static const char* menuItems[] = {
@@ -37,13 +35,12 @@ static const unsigned char* menuIcons[] = {
 };
 
 static void initButtons();
-static ButtonState readButtons();
+ButtonState readButtons();
 
 void setMenuDisplay(Adafruit_SSD1306* displayPtr) {
     display = displayPtr;
 }
 
-// Función para inicializar los pines de los botones
 static void initButtons() {
     pinMode(BTN_UP, INPUT_PULLUP);
     pinMode(BTN_DOWN, INPUT_PULLUP);
@@ -52,14 +49,13 @@ static void initButtons() {
     pinMode(BTN_SELECT, INPUT_PULLUP);
 }
 
-static ButtonState readButtons() {
+ButtonState readButtons() {
     if (millis() - lastButtonPress < DEBOUNCE_TIME) {
         return BTN_NONE;
     }
     
     ButtonState currentButton = BTN_NONE;
     
-    // Leer solo un botón a la vez, con prioridad
     if (digitalRead(BTN_UP) == LOW) {
         currentButton = BTN_UP_PRESSED;
     }
@@ -75,8 +71,7 @@ static ButtonState readButtons() {
     else if (digitalRead(BTN_SELECT) == LOW) {
         currentButton = BTN_SELECT_PRESSED;
     }
-    
-    // Solo procesar si hay un botón presionado Y es diferente al último
+
     if (currentButton != BTN_NONE && currentButton != lastButtonState) {
         lastButtonPress = millis();
         lastButtonState = currentButton;
@@ -84,8 +79,7 @@ static ButtonState readButtons() {
         Serial.println(currentButton);
         return currentButton;
     }
-    
-    // Si no hay botón presionado, resetear el estado
+
     if (currentButton == BTN_NONE) {
         lastButtonState = BTN_NONE;
     }
@@ -108,7 +102,6 @@ void initMenu() {
     Serial.println("Menu inicializado correctamente!");
 }
 
-// Función para resetear a la pantalla de splash
 void resetToSplash() {
     inMenu = false;
     inSubMenu = false;
@@ -155,13 +148,11 @@ void displaySplashScreen() {
     display->display();
 }
 
-// Función para dibujar el menú principal con iconos individuales mejorada
 void drawMenu() {
     if (!display) return;
     
     display->clearDisplay();
-    
-    // Dibujar icono según el elemento del menú actual
+
     switch(currentMenuItem) {
         case MENU_SCANNER:
             display->drawBitmap(58, 2, icon_scanner, 15, 16, SSD1306_WHITE);
@@ -210,14 +201,12 @@ void drawMenu() {
     display->display();
 }
 
-// Función para manejar la navegación del menú
 void handleMenuNavigation() {
     ButtonState buttonPressed = readButtons();
     if (buttonPressed == BTN_NONE) {
         return;
     }
-    
-    // Verificar timeout del menú (solo cuando estamos en el menú, no en splash ni submenú)
+
     if (inMenu && !inSubMenu) {
         if (millis() - lastMenuActivity > menuTimeout) {
             Serial.println("Timeout del menu - regresando a splash");
@@ -227,7 +216,7 @@ void handleMenuNavigation() {
     }
     
     if (!inMenu && !inSubMenu) {
-        // Estamos en pantalla de inicio, solo LEFT o RIGHT entran al menú
+
         if (buttonPressed == BTN_LEFT_PRESSED || buttonPressed == BTN_RIGHT_PRESSED) {
             Serial.println("Entrando al menu principal");
             inMenu = true;
@@ -237,7 +226,7 @@ void handleMenuNavigation() {
         }
     }
     else if (inMenu && !inSubMenu) {
-        // Estamos en el menú principal
+
         lastMenuActivity = millis();
         
         switch(buttonPressed) {
@@ -293,7 +282,6 @@ void handleMenuNavigation() {
         }
     }
     else if (inSubMenu) {
-        // Estamos en un submenú, cualquier botón nos regresa al menú principal
         Serial.println("Saliendo del submenu - regresando al menu");
         inSubMenu = false;
         displayNeedsUpdate = true;
@@ -313,9 +301,13 @@ void executeMenuItem() {
         case MENU_SCANNER:
             display->println("Scanner Mode");
             display->println("Scanning 2.4GHz...");
-            display->println("");
-            display->println("Feature coming soon!");
-            break;
+            display->println("Press any key to exit");
+            display->display();
+            
+            // Iniciar el modo escáner
+            scannerSetup();
+            in_scanner_mode = true;
+            return;
             
         case MENU_ANALYZER:
             display->println("Analyzer Mode");
