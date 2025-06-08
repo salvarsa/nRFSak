@@ -31,30 +31,39 @@ void setup() {
 }
 
 void loop() {
-  if (in_scanner_mode) {
-    scannerLoop();
-    
-    ButtonState btn = readButtons();
-    if (btn != BTN_NONE) {
-        scannerExit();
-        resetToSplash();
-        setMenuDisplayUpdateFlag(true); 
-    }
-}
-else {
-    handleMenuNavigation();
-    
-    if (menuNeedsDisplayUpdate()) {
-        if (menuIsShowingSplash()) {
-            displaySplashScreen();
-        } 
-        else if (menuIsInMenu() && !menuIsInSubMenu()) {
-            drawMenu();
+    // Verificar si estamos en modo scanner
+    if (in_scanner_mode) {
+        // Ejecutar el bucle del scanner
+        scannerLoop();
+        
+        // Verificar si se presiona algún botón para salir
+        ButtonState btn = readButtons();
+        if (btn != BTN_NONE) {
+            Serial.println("Botón presionado - saliendo del scanner");
+            scannerExit();
+            resetToSplash();
+            setMenuDisplayUpdateFlag(true); 
         }
-        setMenuDisplayUpdateFlag(false);
     }
-}
+    else {
+        // Manejar navegación del menú principal
+        handleMenuNavigation();
+        
+        // Actualizar pantalla si es necesario
+        if (menuNeedsDisplayUpdate()) {
+            if (menuIsShowingSplash()) {
+                displaySplashScreen();
+            } 
+            else if (menuIsInMenu() && !menuIsInSubMenu()) {
+                drawMenu();
+            }
+            setMenuDisplayUpdateFlag(false);
+        }
+    }
 
-// Pequeña pausa para evitar consumo excesivo de CPU
-delay(10);
+    // Pequeña pausa para evitar consumo excesivo de CPU
+    delay(10);
+    
+    // Alimentar al watchdog
+    yield();
 }

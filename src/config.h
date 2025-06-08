@@ -34,6 +34,11 @@
 #define MENU_ITEMS 6
 #define DEBOUNCE_DELAY 50
 
+// Configuraciones del Scanner
+#define CHANNELS 64
+#define SAMPLES_PER_CHANNEL 30  // Reducido para evitar timeouts
+#define SCAN_INTERVAL 500       // Aumentado para dar más tiempo
+
 // Estados de los botones
 enum ButtonState {
   BTN_NONE,
