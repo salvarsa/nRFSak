@@ -1,5 +1,4 @@
 #include "menu.h"
-#include "scanner.h"
 
 static int currentMenuItem = 0;
 static bool inMenu = false;
@@ -297,26 +296,17 @@ void executeMenuItem() {
     
     switch(currentMenuItem) {
         case MENU_SCANNER:
-            Serial.println("=== Iniciando Scanner ===");
-            // Intentar inicializar el scanner
-            if (scannerSetup(display)) {
-                Serial.println("Scanner inicializado correctamente");
-                inSubMenu = false;
-                inMenu = false; 
-                return;
-            } else {
-                Serial.println("Error: No se pudo inicializar el scanner");
-                display->clearDisplay();
-                display->setTextSize(1);
-                display->setTextColor(SSD1306_WHITE);
-                display->setCursor(0, 0);
-                display->println("Scanner Mode");
-                display->println("ERROR: Failed to init");
-                display->println("Check NRF24 connection");
-                display->println("");
-                display->println("Press any key to return");
-                display->display();
-            }
+            display->clearDisplay();
+            display->setTextSize(1);
+            display->setTextColor(SSD1306_WHITE);
+            display->setCursor(0, 0);
+            display->println("scanner Mode");
+            display->println("Analyzing...");
+            display->println("");
+            display->println("Feature coming soon!");
+            display->println("");
+            display->println("Press any key to return");
+            display->display();
             break;
             
         case MENU_ANALYZER:

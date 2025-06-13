@@ -5,7 +5,7 @@
 #include "config.h"
 #include "icons.h"
 #include "menu.h"
-#include "scanner.h"
+
 
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET);
 
@@ -31,25 +31,10 @@ void setup() {
 }
 
 void loop() {
-    // Verificar si estamos en modo scanner
-    if (in_scanner_mode) {
-        // Ejecutar el bucle del scanner
-        scannerLoop();
+    // Manejar navegación del menú principal
+    handleMenuNavigation();
         
-        // Verificar si se presiona algún botón para salir
-        ButtonState btn = readButtons();
-        if (btn != BTN_NONE) {
-            Serial.println("Botón presionado - saliendo del scanner");
-            scannerExit();
-            resetToSplash();
-            setMenuDisplayUpdateFlag(true); 
-        }
-    }
-    else {
-        // Manejar navegación del menú principal
-        handleMenuNavigation();
-        
-        // Actualizar pantalla si es necesario
+    // Actualizar pantalla si es necesario
         if (menuNeedsDisplayUpdate()) {
             if (menuIsShowingSplash()) {
                 displaySplashScreen();
@@ -59,7 +44,7 @@ void loop() {
             }
             setMenuDisplayUpdateFlag(false);
         }
-    }
+
 
     // Pequeña pausa para evitar consumo excesivo de CPU
     delay(10);
