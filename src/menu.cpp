@@ -315,15 +315,15 @@ void displaySplashScreen() {
     display->clearBuffer();
     
     // Dibujar logo principal (si está disponible)
-    display->drawXBMP(14, 8, 48, 16, logo_nrfsak);
+    display->drawXBMP(7, 6, 50, 50, logo_nrfsak);
     
     // Título principal
-    display->setFont(u8g2_font_helvB10_tf);
-    display->drawStr(52, 25, "nRFSak");
+    display->setFont(u8g2_font_t0_17_tr);
+    display->drawStr(64, 33, "nRFSak");
     
     // Versión
-    display->setFont(u8g2_font_6x10_tf);
-    display->drawStr(75, 35, "V 1.0");
+    display->setFont(u8g2_font_t0_11_tr);
+    display->drawStr(75, 46, "v 1.0");
     
     display->sendBuffer();
 }
