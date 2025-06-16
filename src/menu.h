@@ -4,12 +4,11 @@
 #pragma once
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 #include "config.h"
 #include "icons.h"
 
-// Declaraciones de funciones públicas del menú
+// Funciones públicas del menú
 void initMenu();
 void handleMenuNavigation();
 void displaySplashScreen();
@@ -18,14 +17,14 @@ void executeMenuItem();
 void resetToSplash();
 ButtonState readButtons();
 
-// Funciones para obtener el estado del menú
+// Estado del menú
 bool menuNeedsDisplayUpdate();
 bool menuIsShowingSplash();
 bool menuIsInMenu();
 bool menuIsInSubMenu();
 void setMenuDisplayUpdateFlag(bool flag);
 
-// Función para inicializar el display del menú
-void setMenuDisplay(Adafruit_SSD1306* displayPtr);
+// Inicializar display del menú
+void setMenuDisplay(U8G2_SSD1306_128X64_NONAME_F_HW_I2C* displayPtr);
 
 #endif
