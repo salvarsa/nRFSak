@@ -9,4 +9,4 @@
 void initScanner();
 void runScanner(U8G2& u8g2);
 
-#endif // !1
+#endif

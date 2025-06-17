@@ -42,7 +42,7 @@ void runScanner(U8G2& u8g2) {
 
     for (uint8_t ch = 0; ch < CHANNELS && ch < OLED_WIDTH; ++ch) {
         int height = channelActivity[ch];
-        u8g2.drawVLine(ch, OLED_HEIGHT - 1, -height);
+        u8g2.drawBox(ch, OLED_HEIGHT - height - 1, 1, height);
     }
 
     u8g2.sendBuffer();
