@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "icons.h"
+#include "scanner.h"
 
 // Variables del menú
 static int currentMenuItem = 0;
@@ -17,16 +18,16 @@ static ButtonState lastButtonState = BTN_NONE;
 
 static U8G2_SSD1306_128X64_NONAME_F_HW_I2C* display = nullptr;
 
-
 static const char* menuItems[] = {
   "Scanner",
-  "Analyzer", 
+  "Analizer", 
   "Jammer",
-  "BLE Spoofer",
-  "Sour Apple",
-  "Settings"
+  "Spoofer",
+  "Sour apple",
+  "Information"
 };
 
+// Iconos correspondientes a cada menú (ya están definidos en icons.h)
 static const unsigned char* menuIcons[] = {
   icon_scanner,
   icon_analyzer,
@@ -42,8 +43,6 @@ ButtonState readButtons();
 void setMenuDisplay(U8G2_SSD1306_128X64_NONAME_F_HW_I2C* displayPtr) {
     display = displayPtr;
 }
-
-
 
 static void initButtons() {
     pinMode(BTN_UP, INPUT_PULLUP);
@@ -102,8 +101,7 @@ void initMenu() {
     lastMenuActivity = 0;
     lastButtonPress = 0;
     lastButtonState = BTN_NONE;
-    
-};
+}
 
 void resetToSplash() {
     inMenu = false;
@@ -117,17 +115,25 @@ void displaySplashScreen() {
     if (!display) return;
     
     display->clearBuffer();
+    display->setFontMode(1);
+    display->setBitmapMode(1);
     
-    // Dibujar logo principal (si está disponible)
-    display->drawXBMP(7, 6, 50, 50, logo_nrfsak);
+    // Marco principal
+    display->drawFrame(3, 3, 122, 57);
     
-    // Título principal
-    display->setFont(u8g2_font_t0_17_tr);
-    display->drawStr(64, 33, "nRFSak");
+    // Línea divisoria superior
+    display->drawLine(4, 14, 123, 14);
+    
+    // Logo principal
+    display->drawXBMP(41, 18, 40, 40, logo_nrfsak);
+    
+    // Título
+    display->setFont(u8g2_font_t0_11_tr);
+    display->drawStr(40, 13, "nFRSack");
     
     // Versión
-    display->setFont(u8g2_font_t0_11_tr);
-    display->drawStr(75, 46, "v 1.0");
+    display->setFont(u8g2_font_4x6_tr);
+    display->drawStr(7, 56, "V 1.0");
     
     display->sendBuffer();
 }
@@ -136,41 +142,61 @@ void drawMenu() {
     if (!display) return;
     
     display->clearBuffer();
-
-    // Dibujar icono del menú actual
+    display->setFontMode(1);
+    display->setBitmapMode(1);
+    
+    // Marco principal
+    display->drawFrame(3, 3, 122, 57);
+    
+    // Línea divisoria superior
+    display->drawLine(4, 14, 123, 14);
+    
+    // Línea vertical separadora para el contador
+    display->drawLine(25, 4, 25, 14);
+    
+    // Título del menú actual
+    display->setFont(u8g2_font_t0_11_tr);
+    display->drawStr(40, 13, menuItems[currentMenuItem]);
+    
+    // Contador de posición (ejemplo: "1/6")
+    display->setDrawColor(2);
+    display->setFont(u8g2_font_5x7_tr);
+    char counterStr[10];
+    snprintf(counterStr, sizeof(counterStr), "%d/6", currentMenuItem + 1);
+    display->drawStr(8, 12, counterStr);
+    
+    // Restablecer color de dibujo
+    display->setDrawColor(1);
+    
+    // Dibujar icono específico según el menú actual
     switch(currentMenuItem) {
         case MENU_SCANNER:
-            display->drawXBMP(56, 8, 15, 16, icon_scanner);
+            display->drawXBMP(41, 17, 40, 40, icon_scanner);
             break;
+            
         case MENU_ANALYZER:
-            display->drawXBMP(54, 8, 17, 16, icon_analyzer);
+            display->drawXBMP(41, 17, 40, 40, icon_analyzer);
             break;
+            
         case MENU_JAMMER:
-            display->drawXBMP(57, 8, 14, 16, icon_jammer);
+            // Línea adicional para el jammer
+            display->drawLine(49, 37, 70, 37);
+            display->drawXBMP(40, 17, 40, 40, icon_jammer);
             break;
+            
         case MENU_BLE_SPOOFER:
-            display->drawXBMP(57, 8, 14, 16, icon_ble);
+            display->drawXBMP(36, 12, 50, 50, icon_ble);
             break;
+            
         case MENU_SOUR_APPLE:
-            display->drawXBMP(55, 8, 18, 18, icon_apple);
+            // Marco ligeramente diferente para Sour Apple
+            display->drawXBMP(41, 17, 40, 40, icon_apple);
             break;
+            
         case MENU_SETTINGS:
-            display->drawXBMP(56, 8, 16, 16, icon_settings);
+            display->drawXBMP(42, 17, 40, 40, icon_settings);
             break;
     }
-    
-    // Nombre del elemento del menú
-    display->setFont(u8g2_font_helvB08_tf);
-    int textWidth = display->getStrWidth(menuItems[currentMenuItem]);
-    int textX = (OLED_WIDTH - textWidth) / 2;
-    display->drawStr(textX, 38, menuItems[currentMenuItem]);
-    
-    // Mostrar navegación
-    display->setFont(u8g2_font_5x7_tf);
-    char navStr[10];
-    snprintf(navStr, sizeof(navStr), "%d/%d", currentMenuItem + 1, MENU_ITEMS);
-    display->drawStr(2, 10, navStr);
-    
     
     display->sendBuffer();
 }
@@ -215,9 +241,12 @@ void handleMenuNavigation() {
             default: break;
         }
     } else if (inSubMenu) {
-        inSubMenu = false;
-        displayNeedsUpdate = true;
-        lastMenuActivity = millis();
+        // Salir del submenú
+        if (buttonPressed == BTN_LEFT_PRESSED || buttonPressed == BTN_RIGHT_PRESSED) {
+            inSubMenu = false;
+            displayNeedsUpdate = true;
+            lastMenuActivity = millis();
+        }
     }
 }
 
@@ -229,20 +258,62 @@ void executeMenuItem() {
     
     switch(currentMenuItem) {
         case MENU_SCANNER:
+            initScanner();
+            runScanner(*display);
             break;
             
         case MENU_ANALYZER:
-        case MENU_JAMMER:
-        case MENU_BLE_SPOOFER:
-        case MENU_SOUR_APPLE:
-        case MENU_SETTINGS:
             display->clearBuffer();
             display->setFont(u8g2_font_helvB08_tf);
-            display->drawStr(0, 12, menuItems[currentMenuItem]);
+            display->drawStr(0, 12, "Analyzer");
             display->setFont(u8g2_font_6x10_tf);
             display->drawStr(0, 28, "Feature coming soon!");
             display->drawStr(0, 45, "Press LEFT/RIGHT");
             display->drawStr(0, 55, "to return");
+            display->sendBuffer();
+            break;
+            
+        case MENU_JAMMER:
+            display->clearBuffer();
+            display->setFont(u8g2_font_helvB08_tf);
+            display->drawStr(0, 12, "Jammer");
+            display->setFont(u8g2_font_6x10_tf);
+            display->drawStr(0, 28, "Feature coming soon!");
+            display->drawStr(0, 45, "Press LEFT/RIGHT");
+            display->drawStr(0, 55, "to return");
+            display->sendBuffer();
+            break;
+            
+        case MENU_BLE_SPOOFER:
+            display->clearBuffer();
+            display->setFont(u8g2_font_helvB08_tf);
+            display->drawStr(0, 12, "BLE Spoofer");
+            display->setFont(u8g2_font_6x10_tf);
+            display->drawStr(0, 28, "Feature coming soon!");
+            display->drawStr(0, 45, "Press LEFT/RIGHT");
+            display->drawStr(0, 55, "to return");
+            display->sendBuffer();
+            break;
+            
+        case MENU_SOUR_APPLE:
+            display->clearBuffer();
+            display->setFont(u8g2_font_helvB08_tf);
+            display->drawStr(0, 12, "Sour Apple");
+            display->setFont(u8g2_font_6x10_tf);
+            display->drawStr(0, 28, "Feature coming soon!");
+            display->drawStr(0, 45, "Press LEFT/RIGHT");
+            display->drawStr(0, 55, "to return");
+            display->sendBuffer();
+            break;
+            
+        case MENU_SETTINGS:
+            display->clearBuffer();
+            display->setFont(u8g2_font_helvB08_tf);
+            display->drawStr(0, 12, "Information");
+            display->setFont(u8g2_font_6x10_tf);
+            display->drawStr(0, 28, "nRFSak v1.0");
+            display->drawStr(0, 38, "2.4GHz Toolkit");
+            display->drawStr(0, 55, "Press LEFT/RIGHT");
             display->sendBuffer();
             break;
     }
