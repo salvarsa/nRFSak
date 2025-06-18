@@ -15,6 +15,7 @@ void initScanner() {
     radio.setPayloadSize(0);
     radio.openReadingPipe(1, 0xE7E7E7E7E7LL);
     radio.stopListening();
+    Serial.println(radio.isChipConnected() ? "NRF conectado" : "NRF no detectado");
 }
 
 void runScanner(U8G2& u8g2) {
@@ -33,7 +34,15 @@ void runScanner(U8G2& u8g2) {
             delayMicroseconds(10);
         }
         channelActivity[ch] = map(count, 0, SAMPLES_PER_CHANNEL, 0, OLED_HEIGHT - 20);
+        Serial.printf("CH %3d: %3d hits => bar %d\n", ch, count, channelActivity[ch]);
+
     }
+
+    radio.setChannel(40);  // Wi-Fi canal 1 (2412 MHz)
+    radio.startListening();
+    delayMicroseconds(150);
+    Serial.println(radio.testRPD() ? "Señal detectada en canal 40" : "Silencio en canal 40");
+    radio.stopListening();
 
     // Dibujar gráfico
     u8g2.clearBuffer();

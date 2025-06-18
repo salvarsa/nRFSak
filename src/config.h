@@ -36,7 +36,7 @@
 
 // Configuraciones del Scanner
 #define CHANNELS 128    // nRF24L01 soporta canales 0-127 (2.4-2.527 GHz)
-#define SAMPLES_PER_CHANNEL 100
+#define SAMPLES_PER_CHANNEL 20
 #define SCAN_INTERVAL 100
 #define CHANNEL_WIDTH 1   // 1 MHz por canal
 #define BASE_FREQ 2400    // Frecuencia base en MHz

@@ -257,20 +257,23 @@ void executeMenuItem() {
     Serial.println(menuItems[currentMenuItem]);
     
     switch(currentMenuItem) {
-        case MENU_SCANNER: {
-            initScanner();
-             while (menuIsInSubMenu()) {
-                runScanner(*display);
-                ButtonState btn = readButtons();
-                if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED) {
-                    setMenuDisplayUpdateFlag(true);
-                    break;
+    case MENU_SCANNER:
+    {
+        initScanner();
+        while (menuIsInSubMenu())
+        {
+            runScanner(*display);
+            ButtonState btn = readButtons();
+            if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED)
+            {
+                setMenuDisplayUpdateFlag(true);
+                break;
+            }
         }
+        inSubMenu = false;
+        break;
     }
-    inSubMenu = false;
-    break;
-}
-            
+
         case MENU_ANALYZER:
             display->clearBuffer();
             display->setFont(u8g2_font_helvB08_tf);
