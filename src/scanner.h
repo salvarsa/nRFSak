@@ -7,6 +7,6 @@
 #include <RF24.h>
 
 void initScanner();
-void runScanner(U8G2& u8g2);
+void runScanner(U8G2& u8g2, bool& shouldExit);
 
 #endif

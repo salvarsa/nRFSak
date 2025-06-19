@@ -1,11 +1,14 @@
 // #include "scanner.h"
 // #include <SPI.h>
 // #include "menu.h"
+// #include "config.h"
 
 // static SPIClass spiNRF(VSPI);
 // static RF24 radio(NRF1_CE, NRF1_CSN);
 // static uint8_t channelActivity[CHANNELS];
 // static uint8_t selectedChannel = 0;
+// static ScannerState scannerState = SCANNER_IDLE;
+// static bool scanningPaused = false;
 
 // void initScanner() {
 //     spiNRF.begin(NRF1_SCK, NRF1_MISO, NRF1_MOSI, NRF1_CSN);
@@ -17,87 +20,101 @@
 //     radio.setPayloadSize(0);
 //     radio.openReadingPipe(1, 0xE7E7E7E7E7LL);
 //     radio.stopListening();
+//     scannerState = SCANNER_IDLE;
 //     Serial.println(radio.isChipConnected() ? "NRF conectado" : "NRF no detectado");
 // }
 
-// void runScanner(U8G2& u8g2) {
-//     memset(channelActivity, 0, sizeof(channelActivity));
+// void runScanner(U8G2& u8g2, bool& shouldExit) {
+//     if (scannerState == SCANNER_IDLE) {
+//         memset(channelActivity, 0, sizeof(channelActivity));
+//         scannerState = SCANNER_SCANNING;
+//         selectedChannel = 0;
+//     }
 
-//     for (uint8_t ch = 0; ch < CHANNELS; ++ch) {
-//         uint16_t count = 0;
-//         for (int s = 0; s < SAMPLES_PER_CHANNEL; ++s) {
-//             radio.setChannel(ch);
-//             radio.startListening();
-//             delayMicroseconds(130);
-//             if (radio.testRPD()) {
-//                 count++;
+//     if (scannerState == SCANNER_SCANNING) {
+//         for (uint8_t ch = 0; ch < CHANNELS; ++ch) {
+//             uint16_t count = 0;
+//             for (int s = 0; s < SAMPLES_PER_CHANNEL; ++s) {
+//                 radio.setChannel(ch);
+//                 radio.startListening();
+//                 delayMicroseconds(130);
+//                 if (radio.testRPD()) {
+//                     count++;
+//                 }
+//                 radio.stopListening();
+//                 delayMicroseconds(10);
+                
+//                 // Comprobar si se debe salir durante el escaneo
+//                 ButtonState btn = readButtons();
+//                 if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED) {
+//                     shouldExit = true;
+//                     scannerState = SCANNER_IDLE;
+//                     return;
+//                 }
 //             }
-//             radio.stopListening();
-//             delayMicroseconds(10);
+//             channelActivity[ch] = map(count, 0, SAMPLES_PER_CHANNEL, 0, 58);
 //         }
-//         channelActivity[ch] = map(count, 0, SAMPLES_PER_CHANNEL, 0, OLED_HEIGHT - 20);
-//         Serial.printf("CH %3d: %3d hits => bar %d\n", ch, count, channelActivity[ch]);
-
+//         scannerState = SCANNER_VISUALIZING;
 //     }
 
-//     radio.setChannel(40);  // Wi-Fi canal 1 (2412 MHz)
-//     radio.startListening();
-//     delayMicroseconds(150);
-//     Serial.println(radio.testRPD() ? "Señal detectada en canal 40" : "Silencio en canal 40");
-//     radio.stopListening();
+//     if (scannerState == SCANNER_VISUALIZING) {
+//         u8g2.clearBuffer();
+//         u8g2.setFontMode(1);
+//         u8g2.setBitmapMode(1);
+//         u8g2.setFont(u8g2_font_4x6_tr);
 
-//     // Dibujar gráfico
-//     u8g2.clearBuffer();
-//     u8g2.setFont(u8g2_font_5x7_tr);
-//     u8g2.drawStr(2, 10, "Scanner 2.4 GHz");
-//     // u8g2.setFont(u8g2_font_t0_11_tr);
-//     // u8g2.drawStr((OLED_WIDTH - u8g2.getStrWidth("Scanner 2.4 GHz")) / 2, 10, "Scanner 2.4 GHz");
+//         char header[22];
+//         snprintf(header, sizeof(header), "[CH: %3d  Lvl: %3d]", selectedChannel, channelActivity[selectedChannel]);
+//         u8g2.drawStr(27, 6, header);
 
-//     // Ejes Y
-//     for (int y = 0; y <= OLED_HEIGHT - 20; y += 10) {
-//         u8g2.drawHLine(0, OLED_HEIGHT - 1 - y, 4);
-//         char val[3];
-//         snprintf(val, sizeof(val), "%d", y);
-//         u8g2.drawStr(5, OLED_HEIGHT - 1 - y, val);
-//     }
+//         // Ejes verticales
+//         u8g2.drawLine(2, 63, 2, 1);
+//         u8g2.drawLine(124, 63, 124, 1);
 
-//     // Eje X
-//     for (uint8_t ch = 0; ch < OLED_WIDTH && ch < CHANNELS; ch += 10) {
-//         char label[4];
-//         snprintf(label, sizeof(label), "%d", ch);
-//         u8g2.drawStr(ch, OLED_HEIGHT - 1, label);
-//     }
+//         // Ticks Y
+//         for (int y = 10; y <= 52; y += 6) {
+//             u8g2.drawLine(0, y, 7, y);
+//             u8g2.drawLine(120, y, 127, y);
+//         }
 
-//      // Dibujar barras
-//         for (uint8_t ch = 0; ch < CHANNELS && ch < OLED_WIDTH; ++ch) {
+//         // Línea base eje X
+//         u8g2.drawLine(0, 63, 127, 63);
+
+//         // Dibujar barras
+//         const int barOffset = 8;
+//         for (uint8_t ch = 0; ch < CHANNELS; ++ch) {  // Mostrar todos los canales
 //             int height = channelActivity[ch];
-//             u8g2.drawBox(ch, OLED_HEIGHT - height - 1, 1, height);
+//             int x = ch + barOffset;
+//             int y = 63;
+
+//             if (ch == selectedChannel) {
+//                 u8g2.setDrawColor(2);
+//             }
+
+//             u8g2.drawLine(x, y, x, y - height);
+
+//             if (ch == selectedChannel) {
+//                 u8g2.setDrawColor(1);
+//             }
 //         }
-
-//         // Barra destacada
-//         u8g2.setDrawColor(2);
-//         u8g2.drawBox(selectedChannel, OLED_HEIGHT - channelActivity[selectedChannel] - 2, 1, channelActivity[selectedChannel]);
-//         u8g2.setDrawColor(1);
-
-//         // Flecha + etiqueta
-//         u8g2.drawTriangle(selectedChannel, 11, selectedChannel - 2, 15, selectedChannel + 2, 15);
-
-//         char info[32];
-//         snprintf(info, sizeof(info), "CH: %d  Lvl: %d", selectedChannel, channelActivity[selectedChannel]);
-//         u8g2.drawStr(OLED_WIDTH - 64, 10, info);
 
 //         u8g2.sendBuffer();
-//         delay(300);
 
-//         // Control navegación canal o salir
+//         // Manejar navegación de canales
 //         ButtonState btn = readButtons();
-//         if (btn == BTN_LEFT_PRESSED && selectedChannel > 0) selectedChannel--;
-//         if (btn == BTN_RIGHT_PRESSED && selectedChannel < CHANNELS - 1) selectedChannel++;
-//         if (btn == BTN_SELECT_PRESSED);
+//         if (btn == BTN_UP_PRESSED && selectedChannel > 0) {
+//             selectedChannel--;
+//         } 
+//         else if (btn == BTN_DOWN_PRESSED && selectedChannel < CHANNELS - 1) {
+//             selectedChannel++;
+//         }
+//         else if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED) {
+//             shouldExit = true;
+//             scannerState = SCANNER_IDLE;
+//         }
+//     }
 // }
 
-
-// File: src/scanner.cpp
 #include "scanner.h"
 #include <SPI.h>
 #include "menu.h"
@@ -106,6 +123,8 @@ static SPIClass spiNRF(VSPI);
 static RF24 radio(NRF1_CE, NRF1_CSN);
 static uint8_t channelActivity[CHANNELS];
 static uint8_t selectedChannel = 0;
+static ScannerState scannerState = SCANNER_IDLE;
+static bool scanningPaused = false;
 
 void initScanner() {
     spiNRF.begin(NRF1_SCK, NRF1_MISO, NRF1_MOSI, NRF1_CSN);
@@ -117,76 +136,130 @@ void initScanner() {
     radio.setPayloadSize(0);
     radio.openReadingPipe(1, 0xE7E7E7E7E7LL);
     radio.stopListening();
+    scannerState = SCANNER_IDLE;
+    scanningPaused = false;
     Serial.println(radio.isChipConnected() ? "NRF conectado" : "NRF no detectado");
 }
 
-void runScanner(U8G2& u8g2) {
-    memset(channelActivity, 0, sizeof(channelActivity));
-
-    for (uint8_t ch = 0; ch < CHANNELS; ++ch) {
-        uint16_t count = 0;
-        for (int s = 0; s < SAMPLES_PER_CHANNEL; ++s) {
-            radio.setChannel(ch);
-            radio.startListening();
-            delayMicroseconds(130);
-            if (radio.testRPD()) {
-                count++;
-            }
-            radio.stopListening();
-            delayMicroseconds(10);
-        }
-        channelActivity[ch] = map(count, 0, SAMPLES_PER_CHANNEL, 0, 58);
-        Serial.printf("CH %3d: %3d hits => bar %d\n", ch, count, channelActivity[ch]);
-    }
-
-    // --- Visualización estilo nRFBox ---
-    u8g2.clearBuffer();
-    u8g2.setFontMode(1);
-    u8g2.setBitmapMode(1);
-    u8g2.setFont(u8g2_font_4x6_tr);
-
-    char header[22];
-    snprintf(header, sizeof(header), "[CH: %3d  Lvl: %3d]", selectedChannel, channelActivity[selectedChannel]);
-    u8g2.drawStr(27, 6, header);
-
-    // Ejes verticales
-    u8g2.drawLine(2, 63, 2, 1);
-    u8g2.drawLine(124, 63, 124, 1);
-
-    // Ticks Y
-    for (int y = 10; y <= 52; y += 6) {
-        u8g2.drawLine(0, y, 7, y);
-        u8g2.drawLine(120, y, 127, y);
-    }
-
-    // Línea base eje X
-    u8g2.drawLine(0, 59, 127, 59);
-
-    // Dibujar barras estilo línea vertical por canal
-    const int barOffset = 8;
-    const int barMaxHeight = 58;
-    for (uint8_t ch = 0; ch < 90; ++ch) {
-        int height = channelActivity[ch];
-        int x = ch + barOffset;
-        int y = 63;
-
-        if (ch == selectedChannel) {
-            u8g2.setDrawColor(2);
-        }
-
-        u8g2.drawLine(x, y, x, y - height);
-
-        if (ch == selectedChannel) {
-            u8g2.setDrawColor(1);
-        }
-    }
-
-    u8g2.sendBuffer();
-    delay(300);
-
-    // Control navegación canal o salir
+void runScanner(U8G2& u8g2, bool& shouldExit) {
     ButtonState btn = readButtons();
-    if (btn == BTN_LEFT_PRESSED && selectedChannel > 0) selectedChannel--;
-    if (btn == BTN_RIGHT_PRESSED && selectedChannel < CHANNELS - 1) selectedChannel++;
-    if (btn == BTN_SELECT_PRESSED) return;
+    
+    // Manejar botón SELECT para pausar/reanudar
+    if (btn == BTN_SELECT_PRESSED) {
+        if (scannerState == SCANNER_SCANNING) {
+            scannerState = SCANNER_PAUSED;
+            scanningPaused = true;
+            Serial.println("Escaneo pausado");
+        } 
+        else if (scannerState == SCANNER_PAUSED) {
+            scannerState = SCANNER_SCANNING;
+            scanningPaused = false;
+            Serial.println("Escaneo reanudado");
+        }
+    }
+    
+    // Salir con botones izquierda/derecha
+    if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED) {
+        shouldExit = true;
+        scannerState = SCANNER_IDLE;
+        return;
+    }
+
+    if (scannerState == SCANNER_IDLE) {
+        memset(channelActivity, 0, sizeof(channelActivity));
+        scannerState = SCANNER_SCANNING;
+        selectedChannel = 0;
+        scanningPaused = false;
+    }
+
+    if (scannerState == SCANNER_SCANNING && !scanningPaused) {
+        for (uint8_t ch = 0; ch < CHANNELS; ++ch) {
+            // Si está pausado, salir del bucle
+            if (scanningPaused) break;
+            
+            uint16_t count = 0;
+            for (int s = 0; s < SAMPLES_PER_CHANNEL; ++s) {
+                radio.setChannel(ch);
+                radio.startListening();
+                delayMicroseconds(130);
+                if (radio.testRPD()) {
+                    count++;
+                }
+                radio.stopListening();
+                delayMicroseconds(10);
+                
+                // Comprobar si se debe salir durante el escaneo
+                ButtonState btn = readButtons();
+                if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED) {
+                    shouldExit = true;
+                    scannerState = SCANNER_IDLE;
+                    return;
+                }
+            }
+            channelActivity[ch] = map(count, 0, SAMPLES_PER_CHANNEL, 0, 58);
+        }
+        if (!scanningPaused) {
+            scannerState = SCANNER_VISUALIZING;
+        }
+    }
+
+    if (scannerState == SCANNER_VISUALIZING || scannerState == SCANNER_PAUSED) {
+        u8g2.clearBuffer();
+        u8g2.setFontMode(1);
+        u8g2.setBitmapMode(1);
+        u8g2.setFont(u8g2_font_4x6_tr);
+
+        // Mostrar estado de pausa si está activo
+        if (scanningPaused) {
+            u8g2.drawStr(40, 6, "[PAUSED]");
+        }
+        
+        char header[22];
+        snprintf(header, sizeof(header), "[CH: %3d  Lvl: %3d]", selectedChannel, channelActivity[selectedChannel]);
+        u8g2.drawStr(27, scanningPaused ? 16 : 6, header);
+
+        // Ejes verticales
+        u8g2.drawLine(2, 63, 2, 1);
+        u8g2.drawLine(124, 63, 124, 1);
+
+        // Ticks Y
+        for (int y = 10; y <= 52; y += 6) {
+            u8g2.drawLine(0, y, 7, y);
+            u8g2.drawLine(120, y, 127, y);
+        }
+
+        // Línea base eje X
+        u8g2.drawLine(0, 63, 127, 63);
+
+        // Dibujar barras
+        const int barOffset = 8;
+        for (uint8_t ch = 0; ch < CHANNELS; ++ch) {
+            int height = channelActivity[ch];
+            int x = ch + barOffset;
+            int y = 63;
+
+            if (ch == selectedChannel) {
+                u8g2.setDrawColor(2);
+            }
+
+            u8g2.drawLine(x, y, x, y - height);
+
+            if (ch == selectedChannel) {
+                u8g2.setDrawColor(1);
+            }
+        }
+
+        u8g2.sendBuffer();
+
+        // Manejar navegación de canales solo si no está pausado
+        if (!scanningPaused) {
+            ButtonState btn = readButtons();
+            if (btn == BTN_UP_PRESSED && selectedChannel > 0) {
+                selectedChannel--;
+            } 
+            else if (btn == BTN_DOWN_PRESSED && selectedChannel < CHANNELS - 1) {
+                selectedChannel++;
+            }
+        }
+    }
 }

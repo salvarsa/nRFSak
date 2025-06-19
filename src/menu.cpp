@@ -259,18 +259,20 @@ void executeMenuItem() {
     switch(currentMenuItem) {
     case MENU_SCANNER:
     {
+        bool shouldExitScanner = false;
         initScanner();
-        while (menuIsInSubMenu())
-        {
-            runScanner(*display);
-            ButtonState btn = readButtons();
-            if (btn == BTN_LEFT_PRESSED || btn == BTN_RIGHT_PRESSED)
-            {
+        while (!shouldExitScanner && menuIsInSubMenu()) {
+            runScanner(*display, shouldExitScanner);
+            
+            // Salir si se detecta botón de salida
+            if (shouldExitScanner) {
+                inSubMenu = false;
                 setMenuDisplayUpdateFlag(true);
                 break;
             }
+            
+            delay(10);
         }
-        inSubMenu = false;
         break;
     }
 
