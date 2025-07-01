@@ -17,7 +17,9 @@ static uint8_t currentScanChannel = 0;
 static uint16_t scanSampleCounter = 0;
 static uint16_t scanHitCounter = 0;
 static unsigned long lastScanTime = 0;
+static unsigned long lastGraphUpdate = 0;  // Nuevo: tiempo para actualización gráfico
 static const unsigned long SCAN_DELAY = 50;  // ms entre muestras
+static const unsigned long GRAPH_UPDATE_INTERVAL = 100;  // ms entre actualizaciones gráfico
 
 void initScanner() {
     spiNRF.begin(NRF1_SCK, NRF1_MISO, NRF1_MOSI, NRF1_CSN);
@@ -118,7 +120,9 @@ void runScanner(U8G2& u8g2, bool& shouldExit) {
     }
 
     // Actualizar gráfico de desplazamiento para el canal seleccionado
-    if (millis() - lastScanTime > 100) {  // Actualizar gráfico cada 100ms
+    if (millis() - lastGraphUpdate > GRAPH_UPDATE_INTERVAL) {
+        lastGraphUpdate = millis();
+        
         // Desplazar el array
         for (int i = 0; i < 127; i++) {
             sensorArray[i] = sensorArray[i+1];
@@ -150,7 +154,7 @@ void runScanner(U8G2& u8g2, bool& shouldExit) {
         u8g2.drawPixel(x, 63);
     }
 
-    // Dibujar gráfico de desplazamiento
+    // Dibujar gráfico de desplazamiento (solo barras verticales)
     for (int x = 0; x < 128; x++) {
         u8g2.drawLine(x, 63, x, 63 - sensorArray[x]);
     }
@@ -166,11 +170,10 @@ void runScanner(U8G2& u8g2, bool& shouldExit) {
     
     // Mostrar progreso de escaneo
     char progress[20];
-    // snprintf(progress, sizeof(progress), "Scan:%d/%d", 
-    //     currentScanChannel, 
-    //     CHANNELS - 1
-    // );
-    
+    snprintf(progress, sizeof(progress), "Scan:%d/%d", 
+        currentScanChannel, 
+        CHANNELS - 1
+    );
     u8g2.drawStr(20, 20, progress);
     
     // Indicador de estado
