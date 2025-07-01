@@ -5,6 +5,7 @@
 #include <U8g2lib.h>
 #include "config.h"
 #include <RF24.h>
+#include <EEPROM.h> 
 
 void initScanner();
 void runScanner(U8G2& u8g2, bool& shouldExit);
