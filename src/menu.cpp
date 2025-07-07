@@ -129,7 +129,7 @@ void displaySplashScreen() {
     
     // Título
     display->setFont(u8g2_font_t0_11_tr);
-    display->drawStr(40, 13, "nFRSack");
+    display->drawStr(40, 13, "nRFSack");
     
     // Versión
     display->setFont(u8g2_font_4x6_tr);
